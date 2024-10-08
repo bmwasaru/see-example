@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser Notifications with SSE</title>
+</head>
+<body>
+    <h1>Browser Notifications</h1>
+    <p id="status">Waiting for notifications...</p>
+    <button id="enable-notifications">Enable Notifications</button>
+
+    <script>
+        // Function to request notification permission
+        function requestNotificationPermission() {
+            if (Notification.permission === 'default') {
+                Notification.requestPermission().then(permission => {
+                    if (permission === 'granted') {
+                        alert('Notifications have been enabled!');
+                    } else {
+                        alert('Notifications have been denied.');
+                    }
+                });
+            } else if (Notification.permission === 'granted') {
+                alert('Notifications are already enabled.');
+            } else {
+                alert('Notifications have been blocked. Please enable them manually in your browser settings.');
+            }
+        }
+
+        // Add an event listener to the button to request notification permission
+        document.getElementById('enable-notifications').addEventListener('click', requestNotificationPermission);
+
+        // Create a new EventSource to listen to the notifications
+        const eventSource = new EventSource('/notifications');
+
+        // When a message is received from the server
+        eventSource.onmessage = function(event) {
+            const notificationText = event.data;
+            document.getElementById('status').textContent = notificationText;
+
+            // Show notifications only if permission is granted
+            if (Notification.permission === 'granted') {
+                new Notification('New Notification', {
+                    body: notificationText,
+                });
+            }
+        };
+
+        // Handle errors in the event source connection
+        eventSource.onerror = function() {
+            document.getElementById('status').textContent = "Error in receiving notifications.";
+        };
+    </script>
+</body>
+</html>
